@@ -8,6 +8,7 @@
   "license": "MIT",
   "dependencies": {
     "@types/ace": "^0.0.50",
+    "fs-extra": "^11.2.0",
     "html-tag-js": "^1.1.41"
   },
   "devDependencies": {

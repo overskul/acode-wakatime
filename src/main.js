@@ -1,36 +1,54 @@
 import plugin from "../plugin.json";
+import * as Utils from "./utils.js";
 
-const appSettings = acode.require("settings");
-const modeList = ace.require("ace/ext/modelist");
 const sidebar = acode.require("sidebarApps");
+
+// constants
+const API_BASE_URL = "https://api.wakatime.com/api/v1";
+const HEARTBEAT_TIMEOUT = 120000; // 2 minutes
 
 class WakaTimePlugin {
   constructor() {
-    if (!appSettings.value[plugin.id]) {
-      appSettings.value[plugin.id] = {};
-      appSettings.update(false);
-    }
-
-    this.baseAPI = "https://api.wakatime.com/api/v1";
-    this.agentName = "acode";
-    this.acodeVersion = document.body.dataset.version.split(" ")[0];
     this.apiKey = "";
-    this.lastHeartbeat = 0;
-    this.heartbeatTimeout = 120000; // 2 minutes
+    this.lastHeartbeat = {
+      time: 0,
+      file: null,
+      project: null
+    };
 
     this.handleFileSwitch = this.handleFileSwitch.bind(this);
     this.handleEditorChange = this.handleEditorChange.bind(this);
+
+    acode.addIcon(
+      "wakatime",
+      "https://raw.githubusercontent.com/NezitX/acode-wakatime/refs/heads/main/assets/wakatime.svg"
+    );
   }
 
   async init() {
     sidebar.add(
-      "check_circle_outline",
+      "wakatime",
       "wakatime",
       "wakatime",
       null,
       null,
-      this.showSettings.bind(this)
+      this.onSidebarSelect.bind(this)
     );
+
+    this.$style = document.createElement("style");
+    this.$style.id = "wakatime";
+    this.$style.innerHTML = `
+      .icon.wakatime {
+        background-color: currentcolor !important;
+        -webkit-mask: url('https://raw.githubusercontent.com/NezitX/acode-wakatime/refs/heads/main/assets/wakatime.svg') no-repeat center;
+        mask: url('https://raw.githubusercontent.com/NezitX/acode-wakatime/refs/heads/main/assets/wakatime.svg') no-repeat center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-size: 50%;
+        mask-size: 50%;
+      }
+    `;
+    document.head.append(this.$style);
 
     // Add event listener
     editorManager.on("switch-file", this.handleFileSwitch);
@@ -39,17 +57,28 @@ class WakaTimePlugin {
 
   async destroy() {
     sidebar.remove("wakatime");
+    this.$style.remove();
 
     // Clean up event listeners
     editorManager.off("switch-file", this.handleFileSwitch);
     editorManager.editor.off("change", this.handleEditorChange);
   }
 
-  async showSettings() {
+  async onSidebarSelect(el) {
+    if (!this.apiKey) await this.promptApiKey();
+    el.innerHTML = `Your API is: \n${this.apiKey}`;
+  }
+
+  async promptApiKey() {
     const apiKey = await acode.prompt(
       "Enter WakaTime API Key",
+      this.apiKey || "",
       "text",
-      this.apiKey || ""
+      {
+        required: true,
+        placeholder: "Your Wakatime API",
+        test: Utils.apiKeyValid
+      }
     );
 
     if (apiKey) {
@@ -57,37 +86,63 @@ class WakaTimePlugin {
     }
   }
 
+  isValidFile(file) {
+    if (!file || window.addedFolder.length === 0) return false;
+    return window.addedFolder.some(dir => file.uri?.includes(dir.url));
+  }
+
   async handleFileSwitch(file) {
-    if (!file) return;
-    await this.sendHeartbeat(file.filename, true);
+    if (!this.isValidFile(file))
+      return console.warn("[WakaTime] not vaild file");
+    await this.sendHeartbeat(file, true);
   }
 
   async handleEditorChange(changes) {
     const file = editorManager.activeFile;
-    if (!file) return;
-    await this.sendHeartbeat(file.filename, false);
+    if (!this.isValidFile(file))
+      return console.warn("[WakaTime] not vaild file");
+
+    await this.sendHeartbeat(file, false);
   }
 
-  async sendHeartbeat(filename, isWrite) {
-    if (!this.apiKey) return;
+  isDuplicateHeartbeat(file, project, now) {
+    if (!this.lastHeartbeat.file) return false;
+
+    return (
+      this.lastHeartbeat.file === file &&
+      this.lastHeartbeat.project === project &&
+      now - this.lastHeartbeat.time < HEARTBEAT_TIMEOUT
+    );
+  }
+
+  async sendHeartbeat(file, isWrite) {
+    if (!this.apiKey) return console.warn("[WakaTime] apiKey not found");
 
     const now = Date.now();
-    if (now - this.lastHeartbeat < this.heartbeatTimeout) return;
+    const fileuri = file.uri;
+    const project = this.getProjectName(file);
 
-    this.lastHeartbeat = now;
+    if (this.isDuplicateHeartbeat(fileuri, project, now))
+      return console.warn("[WakaTime] Skipping duplicate heartbeat");
+
+    this.lastHeartbeat = {
+      time: now,
+      file: fileuri,
+      project
+    };
 
     const data = {
-      entity: filename,
+      entity: file.filename,
       type: "file",
       time: now / 1000,
       is_write: isWrite,
       plugin: this.getPlugin(),
-      language: this.getFileLanguage(filename),
-      project: this.getProjectName()
+      language: this.getFileLanguage(file),
+      project
     };
 
     try {
-      const response = await fetch(`${this.baseAPI}/users/current/heartbeats`, {
+      const response = await fetch(`${API_BASE_URL}/users/current/heartbeats`, {
         method: "POST",
         headers: {
           Authorization: `Basic ${btoa(this.apiKey)}`,
@@ -98,46 +153,44 @@ class WakaTimePlugin {
 
       if (!response.ok) {
         console.error(`WakaTime API error: ${response.status}`);
+      } else {
+        console.log(
+          "[Wakatime] send heartbeat successfully, response: ",
+          await response.json()
+        );
       }
     } catch (error) {
       console.error(error);
-      // alert("WakaTime Error", error.message);
     }
   }
 
-  getFileLanguage(filename) {
-    const ext = filename.split(".").pop().toLowerCase();
-    const mode = modeList.modes.find(m =>
-      m.extensions.split("|").includes(ext)
-    );
-    return mode?.caption || "Unknown";
+  getFileLanguage(file) {
+    return file.session.$modeId.split("/").pop() || "Unknown";
   }
 
-  getProjectName() {
+  getProjectName(file) {
+    const folder = window.addedFolder.find(dir => file.uri.includes(dir.url));
+    return folder?.title || "Unknown Project";
+  }
+
+  getAgentName() {
+    return window.BuildInfo?.displayName || "Acode";
+  }
+
+  getAppVersion() {
     return (
-      acode.workspace?.name || window.addedFolder[0]?.title || "Unknown Project"
+      window.BuildInfo?.version ||
+      document.body?.dataset?.version?.split(" ")[0] ||
+      "0.0.0 (not found)"
     );
   }
 
   getPlugin() {
-    const agent = `${this.agentName}/${this.acodeVersion} ${plugin.name}/${plugin.version}`;
-    const os = window.device.platform || null;
+    const agent = `${this.getAgentName()}/${this.getAppVersion()} acode-wakatime/${
+      plugin.version
+    }`;
+    const os = window.device?.platform || null;
     return os ? `(${os}) ${agent}` : agent;
-  }
-
-  getSettingsList() {
-    return [
-      {
-        key: "set_wakatime_api_key",
-        text: "Set Wakatime api key",
-        value: this.apiKey || ""
-      }
-    ];
-  }
-
-  onSettingsChange(key, value) {
-    if (!value) return;
-    this.apiKey = value;
   }
 }
 

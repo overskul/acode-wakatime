@@ -5,12 +5,12 @@
   "version": "1.0.0",
   "readme": "readme.md",
   "icon": "icon.png",
-  "files": [],
-  "minVersionCode" : 290,
+  "files": ["assets"],
+  "minVersionCode": 290,
   "price": 0,
   "author": {
     "name": "Nezit X",
-    "email": "",
+    "email": "xnezit@gmail.com",
     "github": "NezitX"
   }
 }
