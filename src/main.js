@@ -1,7 +1,7 @@
 import plugin from "../plugin.json";
 import * as Utils from "./utils.js";
 
-const sidebar = acode.require("sidebarApps");
+const appSettings = acode.require("settings");
 
 // constants
 const API_BASE_URL = "https://api.wakatime.com/api/v1";
@@ -9,7 +9,14 @@ const HEARTBEAT_TIMEOUT = 120000; // 2 minutes
 
 class WakaTimePlugin {
   constructor() {
-    this.apiKey = "";
+    if (!this.settings) {
+      appSettings.value[plugin.id] = {
+        apiKey: null
+      };
+
+      appSettings.update(false);
+    }
+
     this.lastHeartbeat = {
       time: 0,
       file: null,
@@ -18,72 +25,25 @@ class WakaTimePlugin {
 
     this.handleFileSwitch = this.handleFileSwitch.bind(this);
     this.handleEditorChange = this.handleEditorChange.bind(this);
+  }
 
-    acode.addIcon(
-      "wakatime",
-      "https://raw.githubusercontent.com/NezitX/acode-wakatime/refs/heads/main/assets/wakatime.svg"
-    );
+  get settings() {
+    return appSettings.value[plugin.id];
   }
 
   async init() {
-    sidebar.add(
-      "wakatime",
-      "wakatime",
-      "wakatime",
-      null,
-      null,
-      this.onSidebarSelect.bind(this)
-    );
-
-    this.$style = document.createElement("style");
-    this.$style.id = "wakatime";
-    this.$style.innerHTML = `
-      .icon.wakatime {
-        background-color: currentcolor !important;
-        -webkit-mask: url('https://raw.githubusercontent.com/NezitX/acode-wakatime/refs/heads/main/assets/wakatime.svg') no-repeat center;
-        mask: url('https://raw.githubusercontent.com/NezitX/acode-wakatime/refs/heads/main/assets/wakatime.svg') no-repeat center;
-        -webkit-mask-size: contain;
-        mask-size: contain;
-        -webkit-mask-size: 50%;
-        mask-size: 50%;
-      }
-    `;
-    document.head.append(this.$style);
-
     // Add event listener
     editorManager.on("switch-file", this.handleFileSwitch);
     editorManager.editor.on("change", this.handleEditorChange);
   }
 
   async destroy() {
-    sidebar.remove("wakatime");
-    this.$style.remove();
+    delete appSettings.value[plugin.id];
+    appSettings.update(false);
 
     // Clean up event listeners
     editorManager.off("switch-file", this.handleFileSwitch);
     editorManager.editor.off("change", this.handleEditorChange);
-  }
-
-  async onSidebarSelect(el) {
-    if (!this.apiKey) await this.promptApiKey();
-    el.innerHTML = `Your API is: \n${this.apiKey}`;
-  }
-
-  async promptApiKey() {
-    const apiKey = await acode.prompt(
-      "Enter WakaTime API Key",
-      this.apiKey || "",
-      "text",
-      {
-        required: true,
-        placeholder: "Your Wakatime API",
-        test: Utils.apiKeyValid
-      }
-    );
-
-    if (apiKey) {
-      this.apiKey = apiKey;
-    }
   }
 
   isValidFile(file) {
@@ -116,7 +76,8 @@ class WakaTimePlugin {
   }
 
   async sendHeartbeat(file, isWrite) {
-    if (!this.apiKey) return console.warn("[WakaTime] apiKey not found");
+    if (!this.settings.apiKey)
+      return console.warn("[WakaTime] apiKey not found");
 
     const now = Date.now();
     const fileuri = file.uri;
@@ -145,7 +106,7 @@ class WakaTimePlugin {
       const response = await fetch(`${API_BASE_URL}/users/current/heartbeats`, {
         method: "POST",
         headers: {
-          Authorization: `Basic ${btoa(this.apiKey)}`,
+          Authorization: `Basic ${btoa(this.settings.apiKey)}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify(data)
@@ -192,6 +153,29 @@ class WakaTimePlugin {
     const os = window.device?.platform || null;
     return os ? `(${os}) ${agent}` : agent;
   }
+
+  get settingsObj() {
+    return {
+      list: [
+        {
+          key: "api_key",
+          text: "Wakatime API",
+          value: this.settings.apiKey || "",
+          prompt: "Wakatime API",
+          promptType: "text",
+          promptOptions: {
+            required: true,
+            placeholder: "Your Wakatime API",
+            test: Utils.apiKeyValid
+          }
+        }
+      ],
+      cb: (_, value) => {
+        this.settings.apiKey = value;
+        appSettings.update(false);
+      }
+    };
+  }
 }
 
 // Initialize plugin
@@ -204,7 +188,8 @@ if (window.acode) {
 
       acodePlugin.baseUrl = baseUrl;
       await acodePlugin.init($page, cacheFile, cacheFileUrl);
-    }
+    },
+    acodePlugin.settingsObj
   );
   acode.setPluginUnmount(plugin.id, () => {
     acodePlugin.destroy();
