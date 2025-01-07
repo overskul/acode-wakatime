@@ -2,7 +2,7 @@
   "id": "x.wakatime",
   "name": "Wakatime",
   "main": "main.js",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "readme": "readme.md",
   "icon": "icon.png",
   "files": ["assets"],
@@ -10,7 +10,13 @@
   "price": 0,
   "author": {
     "name": "Nezit X",
-    "email": "",
     "github": "NezitX"
-  }
+  },
+  "contributors": [
+    {
+      "name": "Sebastian Jn",
+      "email": "sebastianjnuwu@gmail.com",
+      "url": "https://github.com/sebastianjnuwu"
+    }
+  ]
 }

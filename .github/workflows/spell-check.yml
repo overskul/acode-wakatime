@@ -1,0 +1,21 @@
+name: Spell Check Action ✨🔤
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  spell-check:
+    timeout-minutes: 5
+    name: Check Spelling 📚
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository 📂
+        uses: actions/checkout@v4
+
+      - name: Run Spelling Check 🔎
+        uses: crate-ci/typos@master
+        with:
+          config: ./typos.toml
+          

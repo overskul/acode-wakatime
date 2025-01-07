@@ -61,6 +61,10 @@ Contributions are welcome!
 - Make your changes.  
 - Submit a pull request.  
 
+<a href="https://github.com/NezitX/acode-wakatime/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=NezitX/acode-wakatime" />
+</a>
+
 ---
 
 ## License  

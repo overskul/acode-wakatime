@@ -1,0 +1,14 @@
+[default]
+check-filename = true
+
+[files]
+extend-exclude = [
+  "node_modules",
+  "build",
+]
+
+[default.extend-words]
+strech = "strech"
+contaienr = "contaienr"
+collapsable = "collapsable"
+styl = "styl"
