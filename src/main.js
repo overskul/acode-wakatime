@@ -192,11 +192,11 @@ class WakaTimePlugin {
 
 // Initialize plugin
 if (window.acode) {
-  acode.setPluginInit(
-    plugin.id,
-    () => new WakaTimePlugin().init(),
-    new WakaTimePlugin().settingsObj,
-  );
+  
+  const Instance = new WakaTimePlugin();
+  
+  acode.setPluginInit(plugin.id, () => Instance.init(), Instance.settingsObj);
 
-  acode.setPluginUnmount(plugin.id, () => new AcodeEruda().destroy());
-}
+  acode.setPluginUnmount(plugin.id, () => Instance.destroy());
+  
+};

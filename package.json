@@ -20,13 +20,10 @@
   ],
   "scripts": {
     "zip": "node .acode/zip.js",
-    "build": "webpack --mode development",
+    "build": "webpack",
     "release": "webpack --mode production",
     "lint": "npx @biomejs/biome lint --write",
     "format": "npx @biomejs/biome format --write"
-  },
-  "dependencies": {
-    "html-tag-js": "^1.8.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.18.10",
@@ -36,6 +33,7 @@
     "@biomejs/biome": "^1.9.4",
     "babel-loader": "^9.1.0",
     "colors": "^1.4.0",
+    "html-tag-js": "^1.8.2",
     "file-loader": "^6.2.0",
     "jszip": "^3.10.1",
     "webpack": "^5.76.0",

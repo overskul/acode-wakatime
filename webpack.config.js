@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 const main = (env, options) => {
   return {
     target: "node",
-    mode: options.mode,
+    mode: options.mode || 'development',
     entry: { main: "./src/main.js" },
     output: {
       path: resolve("./", "build"),
