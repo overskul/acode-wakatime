@@ -1,7 +1,19 @@
 import plugin from "../plugin.json";
-import * as Utils from "./utils.js";
-
 const appSettings = acode.require("settings");
+
+/**
+ * Validates the Wakatime API key format.
+ * The key format must match the UUID structure, with an optional "waka_" prefix.
+ *
+ * @param {string} key - The Wakatime API key to be validated.
+ * @returns {boolean} True if the key is valid, otherwise false.
+ */
+function apiKeyValid(key) {
+  const re =
+    /^(waka_)?[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i;
+
+  return !(!key || !re.test(key));
+}
 
 // constants
 const API_BASE_URL = "https://api.wakatime.com/api/v1";
@@ -11,7 +23,7 @@ class WakaTimePlugin {
   constructor() {
     if (!this.settings) {
       appSettings.value[plugin.id] = {
-        apiKey: null
+        apiKey: null,
       };
 
       appSettings.update(false);
@@ -20,7 +32,7 @@ class WakaTimePlugin {
     this.lastHeartbeat = {
       time: 0,
       file: null,
-      project: null
+      project: null,
     };
 
     this.handleFileSwitch = this.handleFileSwitch.bind(this);
@@ -48,19 +60,19 @@ class WakaTimePlugin {
 
   isValidFile(file) {
     if (!file || window.addedFolder.length === 0) return false;
-    return window.addedFolder.some(dir => file.uri?.includes(dir.url));
+    return window.addedFolder.some((dir) => file.uri?.includes(dir.url));
   }
 
   async handleFileSwitch(file) {
     if (!this.isValidFile(file))
-      return console.warn("[WakaTime] not vaild file");
+      return console.warn("[WakaTime] not valid file");
     await this.sendHeartbeat(file, true);
   }
 
   async handleEditorChange(changes) {
     const file = editorManager.activeFile;
     if (!this.isValidFile(file))
-      return console.warn("[WakaTime] not vaild file");
+      return console.warn("[WakaTime] not valid file");
 
     await this.sendHeartbeat(file, false);
   }
@@ -89,7 +101,7 @@ class WakaTimePlugin {
     this.lastHeartbeat = {
       time: now,
       file: fileuri,
-      project
+      project,
     };
 
     const data = {
@@ -99,7 +111,7 @@ class WakaTimePlugin {
       is_write: isWrite,
       plugin: this.getPlugin(),
       language: this.getFileLanguage(file),
-      project
+      project,
     };
 
     try {
@@ -107,9 +119,9 @@ class WakaTimePlugin {
         method: "POST",
         headers: {
           Authorization: `Basic ${btoa(this.settings.apiKey)}`,
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
@@ -117,7 +129,7 @@ class WakaTimePlugin {
       } else {
         console.log(
           "[Wakatime] send heartbeat successfully, response: ",
-          await response.json()
+          await response.json(),
         );
       }
     } catch (error) {
@@ -130,7 +142,7 @@ class WakaTimePlugin {
   }
 
   getProjectName(file) {
-    const folder = window.addedFolder.find(dir => file.uri.includes(dir.url));
+    const folder = window.addedFolder.find((dir) => file.uri.includes(dir.url));
     return folder?.title || "Unknown Project";
   }
 
@@ -166,32 +178,25 @@ class WakaTimePlugin {
           promptOptions: {
             required: true,
             placeholder: "Your Wakatime API",
-            test: Utils.apiKeyValid
-          }
-        }
+            test: apiKeyValid,
+          },
+        },
       ],
       cb: (_, value) => {
         this.settings.apiKey = value;
         appSettings.update(false);
-      }
+      },
     };
   }
 }
 
 // Initialize plugin
 if (window.acode) {
-  const acodePlugin = new WakaTimePlugin();
-  acode.setPluginInit(
-    plugin.id,
-    async (baseUrl, $page, { cacheFileUrl, cacheFile }) => {
-      if (!baseUrl.endsWith("/")) baseUrl += "/";
+  
+  const Instance = new WakaTimePlugin();
+  
+  acode.setPluginInit(plugin.id, () => Instance.init(), Instance.settingsObj);
 
-      acodePlugin.baseUrl = baseUrl;
-      await acodePlugin.init($page, cacheFile, cacheFileUrl);
-    },
-    acodePlugin.settingsObj
-  );
-  acode.setPluginUnmount(plugin.id, () => {
-    acodePlugin.destroy();
-  });
-}
+  acode.setPluginUnmount(plugin.id, () => Instance.destroy());
+  
+};
