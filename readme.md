@@ -1,11 +1,11 @@
-![Banner](https://raw.githubusercontent.com/NezitX/acode-wakatime/refs/heads/main/assets/acode-wakatime-banner.png)
+![Banner](https://raw.githubusercontent.com/overskul/acode-wakatime/refs/heads/main/assets/acode-wakatime-banner.png)
 
 # WakaTime Timer Plugin for Acode  
 
-![GitHub Repo Shield](https://img.shields.io/github/repo-size/NezitX/acode-wakatime?color=blue&label=Size&style=for-the-badge)
-![License](https://img.shields.io/github/license/NezitX/acode-wakatime?color=blue&style=for-the-badge)
-![GitHub Stars](https://img.shields.io/github/stars/NezitX/acode-wakatime?color=blue&style=for-the-badge)
-![Version](https://img.shields.io/github/v/release/NezitX/acode-wakatime?color=blue&style=for-the-badge)
+![GitHub Repo Shield](https://img.shields.io/github/repo-size/overskul/acode-wakatime?color=blue&label=Size&style=for-the-badge)
+![License](https://img.shields.io/github/license/overskul/acode-wakatime?color=blue&style=for-the-badge)
+![GitHub Stars](https://img.shields.io/github/stars/overskul/acode-wakatime?color=blue&style=for-the-badge)
+![Version](https://img.shields.io/github/v/release/overskul/acode-wakatime?color=blue&style=for-the-badge)
 
 This is a simple yet powerful plugin for Acode that integrates with the WakaTime API to track your coding activity directly within the Acode editor. It provides a seamless experience to monitor time spent on projects, enabling developers to stay productive and analyze their coding habits effectively.  
 
@@ -61,8 +61,8 @@ Contributions are welcome!
 - Make your changes.  
 - Submit a pull request.  
 
-<a href="https://github.com/NezitX/acode-wakatime/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=NezitX/acode-wakatime" />
+<a href="https://github.com/overskul/acode-wakatime/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=overskul/acode-wakatime" />
 </a>
 
 ---

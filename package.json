@@ -7,9 +7,9 @@
   "main": "src/main.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/NezitX/acode-wakatime.git"
+    "url": "https://github.com/Overskul/acode-wakatime.git"
   },
-  "author": "NezitX",
+  "author": "Overskul",
   "license": "MIT",
   "contributors": [
     {
@@ -40,7 +40,7 @@
     "webpack-cli": "^6.0.0"
   },
   "bugs": {
-    "url": "https://github.com/NezitX/acode-wakatime/issues"
+    "url": "https://github.com/Overskul/acode-wakatime/issues"
   },
-  "homepage": "https://github.com/NezitX/acode-wakatime#readme"
+  "homepage": "https://github.com/Overskul/acode-wakatime#readme"
 }
