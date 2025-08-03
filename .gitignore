@@ -3,3 +3,6 @@ package-lock.json
 yarn.lock
 build 
 *.zip
+
+# Tested & build the project with pnpm
+pnpm-lock.yaml

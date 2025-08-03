@@ -1,5 +1,5 @@
-import plugin from "../plugin.json";
-const appSettings = acode.require("settings");
+import plugin from '../plugin.json'
+const appSettings = acode.require('settings')
 
 /**
  * Validates the Wakatime API key format.
@@ -35,6 +35,12 @@ class WakaTimePlugin {
       project: null,
     };
 
+    // Offline storage key
+    this.offlineStorageKey = 'wakatime_offline_heartbeats';
+    
+    // Start background sync timer
+    this.startBackgroundSync();
+
     this.handleFileSwitch = this.handleFileSwitch.bind(this);
     this.handleEditorChange = this.handleEditorChange.bind(this);
   }
@@ -56,6 +62,9 @@ class WakaTimePlugin {
     // Clean up event listeners
     editorManager.off("switch-file", this.handleFileSwitch);
     editorManager.editor.off("change", this.handleEditorChange);
+    
+    // Stop background sync
+    this.stopBackgroundSync();
   }
 
   isValidFile(file) {
@@ -114,6 +123,7 @@ class WakaTimePlugin {
       project,
     };
 
+    // ORIGINAL CODE - Try to send online first
     try {
       const response = await fetch(`${API_BASE_URL}/users/current/heartbeats`, {
         method: "POST",
@@ -126,6 +136,8 @@ class WakaTimePlugin {
 
       if (!response.ok) {
         console.error(`WakaTime API error: ${response.status}`);
+        // OFFLINE ENHANCEMENT: Store failed heartbeat
+        this.storeOfflineHeartbeat(data);
       } else {
         console.log(
           "[Wakatime] send heartbeat successfully, response: ",
@@ -134,7 +146,117 @@ class WakaTimePlugin {
       }
     } catch (error) {
       console.error(error);
+      // OFFLINE ENHANCEMENT: Store failed heartbeat
+      this.storeOfflineHeartbeat(data);
     }
+  }
+
+  // OFFLINE ENHANCEMENT: Store heartbeat for later sync
+  storeOfflineHeartbeat(data) {
+    try {
+      const stored = JSON.parse(localStorage.getItem(this.offlineStorageKey) || '[]');
+      const heartbeatWithAuth = {
+        ...data,
+        apiKey: this.settings.apiKey,
+        timestamp: Date.now()
+      };
+      
+      stored.push(heartbeatWithAuth);
+      
+      // Limit to 500 heartbeats to prevent storage overflow
+      if (stored.length > 500) {
+        stored.splice(0, stored.length - 500);
+      }
+      
+      localStorage.setItem(this.offlineStorageKey, JSON.stringify(stored));
+      console.log(`[WakaTime] Heartbeat stored offline (${stored.length} pending)`);
+    } catch (error) {
+      console.error('[WakaTime] Failed to store offline heartbeat:', error);
+    }
+  }
+
+  // OFFLINE ENHANCEMENT: Background sync every 2 minutes
+  startBackgroundSync() {
+    this.syncInterval = setInterval(() => {
+      this.syncOfflineHeartbeats();
+    }, 120000); // 2 minutes
+    
+    // Initial sync after 10 seconds
+    setTimeout(() => this.syncOfflineHeartbeats(), 10000);
+  }
+
+  stopBackgroundSync() {
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+    }
+  }
+
+  // OFFLINE ENHANCEMENT: Sync stored heartbeats
+  async syncOfflineHeartbeats() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(this.offlineStorageKey) || '[]');
+      if (stored.length === 0) return;
+
+      console.log(`[WakaTime] Syncing ${stored.length} offline heartbeats`);
+      
+      const successful = [];
+      
+      for (const heartbeat of stored) {
+        try {
+          const cleanData = {
+            entity: heartbeat.entity,
+            type: heartbeat.type,
+            time: heartbeat.time,
+            is_write: heartbeat.is_write,
+            plugin: heartbeat.plugin,
+            language: heartbeat.language,
+            project: heartbeat.project,
+          };
+
+          const response = await fetch(`${API_BASE_URL}/users/current/heartbeats`, {
+            method: "POST",
+            headers: {
+              Authorization: `Basic ${btoa(heartbeat.apiKey)}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(cleanData),
+          });
+
+          if (response.ok) {
+            successful.push(heartbeat);
+          }
+        } catch (error) {
+          // Skip failed heartbeats, they'll be retried next time
+          continue;
+        }
+      }
+
+      // Remove successful heartbeats from storage
+      if (successful.length > 0) {
+        const remaining = stored.filter(h => !successful.some(s => s.timestamp === h.timestamp));
+        localStorage.setItem(this.offlineStorageKey, JSON.stringify(remaining));
+        console.log(`[WakaTime] Successfully synced ${successful.length} heartbeats, ${remaining.length} remaining`);
+      }
+    } catch (error) {
+      console.error('[WakaTime] Error during offline sync:', error);
+    }
+  }
+
+  // OFFLINE ENHANCEMENT: Get offline stats
+  getOfflineStats() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(this.offlineStorageKey) || '[]');
+      return {
+        count: stored.length,
+        oldestTimestamp: stored.length > 0 ? Math.min(...stored.map(h => h.timestamp)) : null
+      };
+    } catch (error) {
+      return { count: 0, oldestTimestamp: null };
+    }
+  }
+  
+  getConnectionStatus() {
+     return window.navigator.onLine ? 'Online 🟢' : 'Offline 🟠';
   }
 
   getFileLanguage(file) {
@@ -167,6 +289,12 @@ class WakaTimePlugin {
   }
 
   get settingsObj() {
+    const stats = this.getOfflineStats();
+    const connectionStatus = this.getConnectionStatus();
+    const statusText = stats.count > 0 ? 
+      `${stats.count} heartbeats pending sync` : 
+      'All synced';
+
     return {
       list: [
         {
@@ -181,10 +309,26 @@ class WakaTimePlugin {
             test: apiKeyValid,
           },
         },
+        {
+          key: "offline_info",
+          text: `Offline: ${statusText}`,
+          value: "",
+          prompt: "",
+          promptType: "info",
+        },
+        {
+          key: "connection_status",
+          text: `Connection Status: ${connectionStatus}`,
+          value: "",
+          prompt: "",
+          promptType: "info",
+        },
       ],
-      cb: (_, value) => {
-        this.settings.apiKey = value;
-        appSettings.update(false);
+      cb: (key, value) => {
+        if (key === "api_key") {
+          this.settings.apiKey = value;
+          appSettings.update(false);
+        }
       },
     };
   }
