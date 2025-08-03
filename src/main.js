@@ -254,6 +254,10 @@ class WakaTimePlugin {
       return { count: 0, oldestTimestamp: null };
     }
   }
+  
+  getConnectionStatus() {
+     return window.navigator.onLine ? 'Online 🟢' : 'Offline 🟠';
+  }
 
   getFileLanguage(file) {
     return file.session.$modeId.split("/").pop() || "Unknown";
@@ -286,6 +290,7 @@ class WakaTimePlugin {
 
   get settingsObj() {
     const stats = this.getOfflineStats();
+    const connectionStatus = this.getConnectionStatus();
     const statusText = stats.count > 0 ? 
       `${stats.count} heartbeats pending sync` : 
       'All synced';
@@ -305,8 +310,15 @@ class WakaTimePlugin {
           },
         },
         {
-          key: "offline_status",
+          key: "offline_info",
           text: `Offline: ${statusText}`,
+          value: "",
+          prompt: "",
+          promptType: "info",
+        },
+        {
+          key: "connection_status",
+          text: `Connection Status: ${connectionStatus}`,
           value: "",
           prompt: "",
           promptType: "info",
