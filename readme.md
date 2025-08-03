@@ -1,6 +1,4 @@
-![Banner](https://raw.githubusercontent.com/overskul/acode-wakatime/refs/heads/main/assets/acode-wakatime-banner.png)
-
-# WakaTime Timer Plugin for Acode  
+# WakaTime Plugin for Acode  
 
 ![GitHub Repo Shield](https://img.shields.io/github/repo-size/overskul/acode-wakatime?color=blue&label=Size&style=for-the-badge)
 ![License](https://img.shields.io/github/license/overskul/acode-wakatime?color=blue&style=for-the-badge)
