@@ -15,8 +15,13 @@
   "contributors": [
     {
       "name": "Sebastian Jn",
-      "email": "sebastianjnuwu@gmail.com",
-      "url": "https://github.com/sebastianjnuwu"
+      "role": "contributor",
+      "github": "sebastianjnuwu"
+    },
+    {
+      "name": "dconco",
+      "role": "contributor",
+      "github": "dconco"
     }
   ]
 }

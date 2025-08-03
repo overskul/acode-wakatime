@@ -2,22 +2,9 @@
   "name": "acode-wakatime",
   "version": "1.1.0",
   "type": "module",
-  "private": false,
-  "description": "A plugin for Acode to interact with the Wakatime API, enabling time tracking for coding activities.",
   "main": "src/main.js",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Overskul/acode-wakatime.git"
-  },
   "author": "Overskul",
   "license": "MIT",
-  "contributors": [
-    {
-      "name": "Sebastian Jn",
-      "email": "sebastianjnuwu@gmail.com",
-      "url": "https://github.com/sebastianjnuwu"
-    }
-  ],
   "scripts": {
     "zip": "node .acode/zip.js",
     "build": "webpack",
@@ -38,9 +25,5 @@
     "jszip": "^3.10.1",
     "webpack": "^5.76.0",
     "webpack-cli": "^6.0.0"
-  },
-  "bugs": {
-    "url": "https://github.com/Overskul/acode-wakatime/issues"
-  },
-  "homepage": "https://github.com/Overskul/acode-wakatime#readme"
+  }
 }
