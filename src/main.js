@@ -15,6 +15,19 @@ function apiKeyValid(key) {
   return !(!key || !re.test(key));
 }
 
+function apiEndpointRegex(value) {
+  try {
+    const url = new URL(value);
+    // must be http or https
+    if (!/^https?:$/.test(url.protocol)) return false;
+    // must have a hostname
+    if (!url.hostname) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // constants
 const API_BASE_URL = "https://api.wakatime.com/api/v1";
 const HEARTBEAT_TIMEOUT = 120000; // 2 minutes
@@ -24,6 +37,7 @@ class WakaTimePlugin {
     if (!this.settings) {
       appSettings.value[plugin.id] = {
         apiKey: null,
+        endpointKey: null,
       };
 
       appSettings.update(false);
@@ -47,6 +61,12 @@ class WakaTimePlugin {
 
   get settings() {
     return appSettings.value[plugin.id];
+  }
+
+  get apiBaseUrl() {
+    return this.settings.endpointKey && this.settings.endpointKey.trim()
+      ? this.settings.endpointKey.trim()
+      : API_BASE_URL;
   }
 
   async init() {
@@ -125,7 +145,7 @@ class WakaTimePlugin {
 
     // ORIGINAL CODE - Try to send online first
     try {
-      const response = await fetch(`${API_BASE_URL}/users/current/heartbeats`, {
+      const response = await fetch(`${this.apiBaseUrl}/users/current/heartbeats`, {
         method: "POST",
         headers: {
           Authorization: `Basic ${btoa(this.settings.apiKey)}`,
@@ -213,7 +233,7 @@ class WakaTimePlugin {
             project: heartbeat.project,
           };
 
-          const response = await fetch(`${API_BASE_URL}/users/current/heartbeats`, {
+          const response = await fetch(`${this.apiBaseUrl}/users/current/heartbeats`, {
             method: "POST",
             headers: {
               Authorization: `Basic ${btoa(heartbeat.apiKey)}`,
@@ -298,6 +318,18 @@ class WakaTimePlugin {
     return {
       list: [
         {
+          key: "endpoint_key",
+          text: "WakaTime API Endpoint",
+          value: this.settings.endpointKey || "https://api.wakatime.com/api/v1",
+          prompt: "Custom WakaTime API Endpoint",
+          promptType: "text",
+          promptOptions: {
+            required: false,
+            placeholder: "https://api.wakatime.com/api/v1",
+            test: apiEndpointRegex,
+          },
+        },
+        {
           key: "api_key",
           text: "Wakatime API",
           value: this.settings.apiKey || "",
@@ -325,8 +357,8 @@ class WakaTimePlugin {
         },
       ],
       cb: (key, value) => {
-        if (key === "api_key") {
-          this.settings.apiKey = value;
+        if (key === "api_key" || key === "endpoint_key") {
+          this.settings[key === "api_key" ? "apiKey" : "endpointKey"] = value;
           appSettings.update(false);
         }
       },
