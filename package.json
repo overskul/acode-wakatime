@@ -2,28 +2,18 @@
   "name": "acode-wakatime",
   "version": "1.1.0",
   "type": "module",
-  "main": "src/main.js",
-  "author": "Overskul",
+  "author": "overskul",
   "license": "MIT",
-  "scripts": {
-    "zip": "node .acode/zip.js",
-    "build": "webpack",
-    "release": "webpack --mode production",
-    "lint": "npx @biomejs/biome lint --write",
-    "format": "npx @biomejs/biome format --write"
+  "dependencies": {
+    "@types/ace": "^0.0.50",
+    "html-tag-js": "^1.1.41"
   },
   "devDependencies": {
-    "@babel/cli": "^7.18.10",
-    "@babel/core": "^7.18.13",
-    "@babel/plugin-transform-runtime": "^7.19.6",
-    "@babel/preset-env": "^7.18.10",
-    "@biomejs/biome": "^1.9.4",
-    "babel-loader": "^9.1.0",
-    "colors": "^1.4.0",
-    "html-tag-js": "^1.8.2",
-    "file-loader": "^6.2.0",
-    "jszip": "^3.10.1",
-    "webpack": "^5.76.0",
-    "webpack-cli": "^6.0.0"
+    "archiver": "^7.0.1",
+    "esbuild": "^0.24.0"
+  },
+  "scripts": {
+    "dev": "node esbuild.config.js --serve",
+    "build": "node esbuild.config.js"
   }
 }
