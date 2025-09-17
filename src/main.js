@@ -1,5 +1,5 @@
-import plugin from '../plugin.json';
-import { Wakatime } from './Wakatime.js';
+import plugin from "../plugin.json";
+import { Wakatime } from "./Wakatime.js";
 
 if (window.acode) {
   const mPlugin = new Wakatime();
