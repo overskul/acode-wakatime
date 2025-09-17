@@ -14,6 +14,7 @@ This is a simple yet powerful plugin for Acode that integrates with the WakaTime
 - **Project-Based Insights**: Automatically associates your activity with the current project.  
 - **Easy Configuration**: Simple setup process with your WakaTime API key.  
 - **Activity Logs**: View detailed time logs of your sessions.  
+- **Advanced SidebarApp**: View all your Wakatime real-time information on a single tab.
 - **Lightweight and Efficient**: Minimal impact on Acode’s performance.  
 
 ---
@@ -24,11 +25,9 @@ This is a simple yet powerful plugin for Acode that integrates with the WakaTime
    - Sign up for a free [WakaTime](https://wakatime.com) account if you don’t already have one.  
 
 2. **Download the Plugin**:  
-   - Clone or download the plugin files from the repository.  
-   - Or download the plugin directly from the Acode extensions list.  
-
-3. **Enable the Plugin**:  
-   - Open Acode, go to the sidebar, and select the WakaTime app.
+   - Download the plugin directly from the Acode extensions list.  
+   - Or download the plugin zip-file from the repository release's.  
+     - Then Navigate to **Sidebar** > **Extensions** > **"+"** > **Local** > Broswers where the zip-file is stored.
 
 ---
 
@@ -39,6 +38,7 @@ This is a simple yet powerful plugin for Acode that integrates with the WakaTime
 
 2. **Set Up in Acode**:  
    - Open the WakaTime app in Acode.  
+   - Navigate to plugin settings > **WakaTime API Key**.
    - Paste your WakaTime API key in the prompt.  
 
 3. **Start Coding**:  
@@ -49,7 +49,7 @@ This is a simple yet powerful plugin for Acode that integrates with the WakaTime
 ## Usage  
 - The timer starts when you begin editing a file.  
 - Activity is sent to your WakaTime dashboard in real-time.  
-- Use the WakaTime website or app to view detailed analytics of your coding activity.  
+- Use the plugin SidebarApp, WakaTime website or app to view detailed analytics of your coding activity.  
 
 ---
 
