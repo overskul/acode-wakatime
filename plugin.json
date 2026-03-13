@@ -2,17 +2,22 @@
   "id": "x.wakatime",
   "name": "Wakatime",
   "main": "main.js",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "readme": "readme.md",
   "icon": "icon.png",
   "files": ["assets"],
-  "minVersionCode": 290,
+  "minVersionCode": 967,
   "price": 0,
   "author": {
     "name": "overskul",
     "github": "overskul"
   },
   "repository": "https://github.com/overskul/acode-wakatime",
+  "keywords": [
+    "wakatime",
+    "tracker",
+    "time"
+  ],
   "contributors": [
     {
       "name": "Sebastian Jn",

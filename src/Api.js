@@ -60,7 +60,7 @@ export default class WakaAPI {
     this.#handleEditorChangeEvent = this.#handleEditorChange.bind(this);
 
     editorManager.on("switch-file", this.#handleFileSwitchEvent);
-    editorManager.editor.on("change", this.#handleEditorChangeEvent);
+    this.#attachEditorChangeListener();
     this.#offlineStorage.scheduleProcessing();
   }
 
@@ -86,6 +86,28 @@ export default class WakaAPI {
     }
   }
 
+  get #isCodeMirror() {
+    return !!editorManager.isCodeMirror;
+  }
+
+  #attachEditorChangeListener() {
+    if (this.#isCodeMirror) {
+      // CodeMirror 6
+      editorManager.on("file-content-changed", this.#handleEditorChangeEvent);
+    } else {
+      // Ace editor
+      editorManager.editor.on("change", this.#handleEditorChangeEvent);
+    }
+  }
+
+  #detachEditorChangeListener() {
+    if (this.#isCodeMirror) {
+      editorManager.off("file-content-changed", this.#handleEditorChangeEvent);
+    } else {
+      editorManager.editor.off("change", this.#handleEditorChangeEvent);
+    }
+  }
+
   async #handleFileSwitch(file) {
     if (!this.isValidFile(file)) return;
     if (this.#editorChangeTimer) {
@@ -105,20 +127,45 @@ export default class WakaAPI {
     }, WakaAPI.EDITOR_CHANGE_DEBOUNCE);
   }
 
+  #getEditorStats(file) {
+    if (this.#isCodeMirror) {
+      // CodeMirror 6
+      const view = editorManager.editor;
+      const state = view.state;
+      const selection = state.selection.main;
+      const line = state.doc.lineAt(selection.head);
+      return {
+        lines: state.doc.lines,
+        line: line.number,
+        cursorpos: selection.head - line.from + 1,
+      };
+    } else {
+      // Ace editor
+      const pos = file.session.selection.getCursor();
+      return {
+        lines: file.session.getLength(),
+        line: pos.row + 1,
+        cursorpos: pos.column + 1,
+      };
+    }
+  }
+
   #addHeartbeat(file, isWrite) {
     if (!this.#ctx.apiKey) return;
     const project = this.getProjectName(file);
     const timestamp = Date.now();
     if (this.isDuplicateHeartbeat(file.uri, isWrite, project, timestamp))
       return;
-    const pos = file.session.selection.getCursor();
+
+    const { lines, line, cursorpos } = this.#getEditorStats(file);
+
     this.#queue.add(
       {
         file: {
           uri: file.uri,
-          lines: file.session.getLength(),
-          line: pos.row + 1,
-          cursorpos: pos.column + 1,
+          lines,
+          line,
+          cursorpos,
           language: this.getFileLanguage(file),
         },
         project,
@@ -255,6 +302,11 @@ export default class WakaAPI {
   }
 
   getFileLanguage(file) {
+    if (this.#isCodeMirror) {
+      // CodeMirror 6
+      return file?.session?.language ?? file?.ext?.replace(/^\./, "") ?? null;
+    }
+    // Ace editor
     return file?.session?.$modeId?.split("/")?.pop();
   }
 
@@ -287,7 +339,7 @@ export default class WakaAPI {
       this.#editorChangeTimer = null;
     }
     editorManager.off("switch-file", this.#handleFileSwitchEvent);
-    editorManager.editor.off("change", this.#handleEditorChangeEvent);
+    this.#detachEditorChangeListener();
     if (!this.#ctx.settings.saveData) this.#queue.clear();
   }
 
